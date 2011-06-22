@@ -1,32 +1,32 @@
 package eclipsedsm.views;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.dtangler.core.configuration.Arguments;
+import org.dtangler.core.dependencies.Dependable;
+import org.dtangler.core.dependencies.Dependencies;
+import org.dtangler.core.dependencies.DependencyGraph;
+import org.dtangler.javaengine.dependencyengine.JavaDependencyEngine;
+import org.dtangler.javaengine.types.JavaScope;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.jface.action.Action;
-import org.eclipse.jface.action.IAction;
-import org.eclipse.jface.action.MenuManager;
-import org.eclipse.jface.viewers.CellEditor;
+import org.eclipse.core.runtime.Platform;
+import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jface.viewers.ColumnWeightData;
-import org.eclipse.jface.viewers.ComboBoxCellEditor;
-import org.eclipse.jface.viewers.ICellModifier;
 import org.eclipse.jface.viewers.ILabelProviderListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.TableColumn;
-import org.eclipse.swt.widgets.TableItem;
-import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
-
 
 public class SampleView extends ViewPart {
 
@@ -37,20 +37,10 @@ public class SampleView extends ViewPart {
 
 	// TODO Maybe this value should be taken from somewhere?
 	private static final String JAVA_NATURE = "org.eclipse.jdt.core.javanature";
-	
-	private static final Object[] CONTENT = new Object[] {
-		new EditableTableItem("item 1", new Integer(0)),
-		new EditableTableItem("item 2", new Integer(1)) };
 
-private static final String[] VALUE_SET = new String[] { "xxx", "yyy",
-		"zzz" };
-
-private static final String NAME_PROPERTY = "name";
-
-private static final String VALUE_PROPERTY = "value";
-
-private TableViewer viewer;
-
+	private TableViewer viewer;
+	private DependencyGraph items;
+	private Dependable[] itemIndexes;
 
 	/**
 	 * The constructor.
@@ -64,50 +54,58 @@ private TableViewer viewer;
 	 */
 	@Override
 	public void createPartControl(Composite parent) {
-		try {
-			for (IProject project : ResourcesPlugin.getWorkspace().getRoot()
-					.getProjects()) {
-				if (!project.isOpen() || !project.isNatureEnabled(JAVA_NATURE)) {
-					continue;
-				}
 
-				// Use this to obtain path to class file in filesystem
-				// new File(IResource.getLocation().toOSString());
+		viewer = new TableViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
 
-			}
-		} catch (CoreException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		viewer = new TableViewer(parent, SWT.MULTI | SWT.H_SCROLL
-				| SWT.V_SCROLL);
-
-		TableLayout layout = new TableLayout();
-		layout.addColumnData(new ColumnWeightData(50, 75, true));
-		layout.addColumnData(new ColumnWeightData(50, 75, true));
-		viewer.getTable().setLayout(layout);
-
-		TableColumn nameColumn = new TableColumn(viewer.getTable(), SWT.CENTER);
-		nameColumn.setText("Project");
-		TableColumn valColumn = new TableColumn(viewer.getTable(), SWT.CENTER);
-		valColumn.setText("Value");
+		setItems();
+		setColumns();
 		viewer.getTable().setHeaderVisible(true);
 
 		attachContentProvider(viewer);
 		attachLabelProvider(viewer);
-		attachCellEditors(viewer, viewer.getTable());
 
-		MenuManager popupMenu = new MenuManager();
-		IAction newRowAction = new NewRowAction();
-		popupMenu.add(newRowAction);
-		Menu menu = popupMenu.createContextMenu(viewer.getTable());
-		viewer.getTable().setMenu(menu);
+		viewer.setInput(itemIndexes);
 
-		viewer.setInput(CONTENT);
+		// attachCellEditors(viewer, viewer.getTable());
+	}
 
-		// Create the help context id for the viewer's control
-		PlatformUI.getWorkbench().getHelpSystem()
-				.setHelp(viewer.getControl(), "eclipse-dsm.viewer");
+	private void setColumns() {
+		TableLayout layout = new TableLayout();
+		layout.addColumnData(new ColumnWeightData(50, 75, true));
+		for (int i = 0; i < itemIndexes.length; i++) {
+			layout.addColumnData(new ColumnWeightData(50, 75, true));
+		}
+		viewer.getTable().setLayout(layout);
+
+		new TableColumn(viewer.getTable(), SWT.CENTER).setText("Class");
+		for (Dependable dep : itemIndexes) {
+			new TableColumn(viewer.getTable(), SWT.CENTER).setText(dep.getDisplayName());
+		}
+	}
+
+	private void setItems() {
+		//JavaCore javaCore = JavaCore.getJavaCore();
+		String workspacePath = Platform.getInstanceLocation().getURL().getPath();
+		try {
+			List<String> projectPaths = new ArrayList<String>();
+			for (IProject project : ResourcesPlugin.getWorkspace().getRoot().getProjects()) {
+				if (!project.isOpen() || !project.isNatureEnabled(JAVA_NATURE)) {
+					continue;
+				}
+
+				IJavaProject javaProject = JavaCore.create(project);
+
+				String projectAbsolutePath = workspacePath.subSequence(0, workspacePath.length() - 1)
+						+ javaProject.getOutputLocation().toOSString();
+
+				projectPaths.add(projectAbsolutePath);
+
+			}
+			analyze(projectPaths);
+		} catch (CoreException e) {
+			// TODO
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -118,65 +116,48 @@ private TableViewer viewer;
 		viewer.getControl().setFocus();
 	}
 
-	/**
-	 * Checks whether the given resource is a Java class file.
-	 * 
-	 * Copy/Paste from FindBugs Eclipse plugin
-	 * 
-	 * @param resource
-	 *            The resource to check.
-	 * @return <code>true</code> if the given resource is a class file,
-	 *         <code>false</code> otherwise.
-	 */
-	public static boolean isClassFile(IResource resource) {
-		if (resource == null || (resource.getType() != IResource.FILE)) {
-			return false;
-		}
-		String ex = resource.getFileExtension();
-		return "class".equalsIgnoreCase(ex); //$NON-NLS-1$
-
-	}
-
-	private class NewRowAction extends Action {
-		public NewRowAction() {
-			super("Insert New Row");
-		}
-
-		public void run() {
-			EditableTableItem newItem = new EditableTableItem("new row",
-					new Integer(2));
-			viewer.add(newItem);
-		}
-	}
-
 	private void attachLabelProvider(TableViewer viewer) {
 		viewer.setLabelProvider(new ITableLabelProvider() {
+
+			@Override
 			public Image getColumnImage(Object element, int columnIndex) {
 				return null;
 			}
 
+			@Override
 			public String getColumnText(Object element, int columnIndex) {
-				switch (columnIndex) {
-				case 0:
-					return ((EditableTableItem) element).name;
-				case 1:
-					Number index = ((EditableTableItem) element).value;
-					return VALUE_SET[index.intValue()];
-				default:
-					return "Invalid column: " + columnIndex;
+				Dependable item = (Dependable) element;
+				if (columnIndex == 0) {
+					return item.getDisplayName();
+				} else {
+					int otherIndex = 0;
+					for (Dependable otherDep : itemIndexes) {
+						if (columnIndex == ++otherIndex) {
+							if (item == otherDep) {
+								return "-";
+							}
+							return String.valueOf(items.getDependencyWeight(item, otherDep));
+						}
+					}
 				}
+
+				return "Invalid column: " + columnIndex;
 			}
 
+			@Override
 			public void addListener(ILabelProviderListener listener) {
 			}
 
+			@Override
 			public void dispose() {
 			}
 
+			@Override
 			public boolean isLabelProperty(Object element, String property) {
 				return false;
 			}
 
+			@Override
 			public void removeListener(ILabelProviderListener lpl) {
 			}
 		});
@@ -184,59 +165,30 @@ private TableViewer viewer;
 
 	private void attachContentProvider(TableViewer viewer) {
 		viewer.setContentProvider(new IStructuredContentProvider() {
+			@Override
 			public Object[] getElements(Object inputElement) {
 				return (Object[]) inputElement;
 			}
 
+			@Override
 			public void dispose() {
 			}
 
-			public void inputChanged(Viewer viewer, Object oldInput,
-					Object newInput) {
+			@Override
+			public void inputChanged(Viewer viewer, Object oldInput, Object newInput) {
 			}
 		});
 	}
 
-	private void attachCellEditors(final TableViewer viewer, Composite parent) {
-		viewer.setCellModifier(new ICellModifier() {
-			public boolean canModify(Object element, String property) {
-				return true;
-			}
+	private void analyze(List<String> paths) {
+		Arguments arguments = new Arguments();
+		arguments.setDependencyEngineId("java");
+		arguments.setInput(paths);
 
-			public Object getValue(Object element, String property) {
-				if (NAME_PROPERTY.equals(property))
-					return ((EditableTableItem) element).name;
-				else
-					return ((EditableTableItem) element).value;
-			}
+		Dependencies deps = new JavaDependencyEngine().getDependencies(arguments);
+		items = deps.getDependencyGraph(JavaScope.classes);
+		itemIndexes = items.getAllItems().toArray(new Dependable[items.getAllItems().size()]);
 
-			public void modify(Object element, String property, Object value) {
-				TableItem tableItem = (TableItem) element;
-				EditableTableItem data = (EditableTableItem) tableItem
-						.getData();
-				if (NAME_PROPERTY.equals(property))
-					data.name = value.toString();
-				else
-					data.value = (Integer) value;
-
-				viewer.refresh(data);
-			}
-		});
-
-		viewer.setCellEditors(new CellEditor[] { new TextCellEditor(parent),
-				new ComboBoxCellEditor(parent, VALUE_SET) });
-
-		viewer.setColumnProperties(new String[] { NAME_PROPERTY, VALUE_PROPERTY });
-	}
-
-	private static class EditableTableItem {
-		public String name;
-
-		public Integer value;
-
-		public EditableTableItem(String n, Integer v) {
-			name = n;
-			value = v;
-		}
+		//AnalysisResult analyze = new ConfigurableDependencyAnalyzer(arguments).analyze(items);
 	}
 }

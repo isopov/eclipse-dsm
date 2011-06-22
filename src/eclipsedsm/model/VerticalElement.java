@@ -1,0 +1,16 @@
+package eclipsedsm.model;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class VerticalElement extends Element {
+	private final Map<HorizontalElement, Integer> values = new HashMap<HorizontalElement, Integer>();
+
+	public Map<HorizontalElement, Integer> getValues() {
+		return values;
+	}
+
+	public VerticalElement(String name) {
+		super(name);
+	}
+}

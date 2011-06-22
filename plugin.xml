@@ -34,5 +34,8 @@
             file="contexts.xml">
       </contexts>
    </extension>
+   <extension
+         point="org.eclipse.jdt.core.classpathContainerInitializer">
+   </extension>
 
 </plugin>
