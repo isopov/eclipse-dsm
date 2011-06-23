@@ -117,50 +117,7 @@ public class SampleView extends ViewPart {
 	}
 
 	private void attachLabelProvider(TableViewer viewer) {
-		viewer.setLabelProvider(new ITableLabelProvider() {
-
-			@Override
-			public Image getColumnImage(Object element, int columnIndex) {
-				return null;
-			}
-
-			@Override
-			public String getColumnText(Object element, int columnIndex) {
-				Dependable item = (Dependable) element;
-				if (columnIndex == 0) {
-					return item.getDisplayName();
-				} else {
-					int otherIndex = 0;
-					for (Dependable otherDep : itemIndexes) {
-						if (columnIndex == ++otherIndex) {
-							if (item == otherDep) {
-								return "-";
-							}
-							return String.valueOf(items.getDependencyWeight(item, otherDep));
-						}
-					}
-				}
-
-				return "Invalid column: " + columnIndex;
-			}
-
-			@Override
-			public void addListener(ILabelProviderListener listener) {
-			}
-
-			@Override
-			public void dispose() {
-			}
-
-			@Override
-			public boolean isLabelProperty(Object element, String property) {
-				return false;
-			}
-
-			@Override
-			public void removeListener(ILabelProviderListener lpl) {
-			}
-		});
+		viewer.setLabelProvider(new TableLabelProvider());
 	}
 
 	private void attachContentProvider(TableViewer viewer) {
@@ -190,5 +147,49 @@ public class SampleView extends ViewPart {
 		itemIndexes = items.getAllItems().toArray(new Dependable[items.getAllItems().size()]);
 
 		//AnalysisResult analyze = new ConfigurableDependencyAnalyzer(arguments).analyze(items);
+	}
+
+	private final class TableLabelProvider implements ITableLabelProvider {
+		@Override
+		public Image getColumnImage(Object element, int columnIndex) {
+			return null;
+		}
+
+		@Override
+		public String getColumnText(Object element, int columnIndex) {
+			Dependable item = (Dependable) element;
+			if (columnIndex == 0) {
+				return item.getDisplayName();
+			} else {
+				int otherIndex = 0;
+				for (Dependable otherDep : itemIndexes) {
+					if (columnIndex == ++otherIndex) {
+						if (item == otherDep) {
+							return "-";
+						}
+						return String.valueOf(items.getDependencyWeight(item, otherDep));
+					}
+				}
+			}
+
+			return "Invalid column: " + columnIndex;
+		}
+
+		@Override
+		public void addListener(ILabelProviderListener listener) {
+		}
+
+		@Override
+		public void dispose() {
+		}
+
+		@Override
+		public boolean isLabelProperty(Object element, String property) {
+			return false;
+		}
+
+		@Override
+		public void removeListener(ILabelProviderListener lpl) {
+		}
 	}
 }

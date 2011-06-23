@@ -45,16 +45,15 @@ public class TableModel {
 	}
 
 	public Integer getValue(Integer row, Integer column) {
-		return ((VerticalElement) getRowElementsIndexes().get(row)).getValues()
-				.get(getColumnElementsIndexes().get(column));
+		return ((VerticalElement) getRowElementsIndexes().get(row)).getValues().get(
+				getColumnElementsIndexes().get(column));
 	}
 
 	private Map<Integer, Element> getRowElementsIndexes() {
 		Map<Integer, Element> result = new HashMap<Integer, Element>();
 		Integer start = 0;
 		for (Element element : verticals) {
-			Map<Integer, Element> rowElementsIndexes = getRowElementsIndexes(
-					element, start);
+			Map<Integer, Element> rowElementsIndexes = getRowElementsIndexes(element, start);
 			result.putAll(rowElementsIndexes);
 			start += rowElementsIndexes.size();
 		}
@@ -65,27 +64,24 @@ public class TableModel {
 		Map<Integer, Element> result = new HashMap<Integer, Element>();
 		Integer start = 0;
 		for (Element element : horizontals) {
-			Map<Integer, Element> rowElementsIndexes = getRowElementsIndexes(
-					element, start);
+			Map<Integer, Element> rowElementsIndexes = getRowElementsIndexes(element, start);
 			result.putAll(rowElementsIndexes);
 			start += rowElementsIndexes.size();
 		}
 		return result;
 	}
 
-	private Map<Integer, Element> getRowElementsIndexes(Element element,
-			Integer start) {
+	private Map<Integer, Element> getRowElementsIndexes(Element element, Integer start) {
 		if (element.isCollapsed() || !element.isCollapsible()) {
 			return Collections.singletonMap(start, element);
 		} else {
 			Map<Integer, Element> result = new HashMap<Integer, Element>();
 			result.put(start, element);
-			start++;
+			Integer newStart = start + 1;
 			for (Element subelement : element.getChildren()) {
-				Map<Integer, Element> rowElementsIndexes = getRowElementsIndexes(
-						subelement, start);
+				Map<Integer, Element> rowElementsIndexes = getRowElementsIndexes(subelement, newStart);
 				result.putAll(rowElementsIndexes);
-				start += rowElementsIndexes.size();
+				newStart += rowElementsIndexes.size();
 			}
 			return result;
 		}
@@ -94,15 +90,13 @@ public class TableModel {
 	private void checkDimensions(List<String> names, List<List<Integer>> values) {
 		int size = names.size();
 		if (values.size() != size) {
-			throw new IllegalArgumentException("Value matrix of wrong width: "
-					+ values.size() + " instead of " + size);
+			throw new IllegalArgumentException("Value matrix of wrong width: " + values.size() + " instead of " + size);
 
 		}
 		for (List<Integer> column : values) {
 			if (column.size() != size) {
-				throw new IllegalArgumentException(
-						"One of columns of wrong size: " + column.size()
-								+ " instead of " + size);
+				throw new IllegalArgumentException("One of columns of wrong size: " + column.size() + " instead of "
+						+ size);
 			}
 		}
 	}
