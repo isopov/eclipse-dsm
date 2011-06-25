@@ -160,7 +160,7 @@ public class DsmView extends ViewPart {
 		public String getColumnText(Object element, int columnIndex) {
 			Dependable item = (Dependable) element;
 			if (columnIndex == 0) {
-				return item.getDisplayName();
+				return item.getFullyQualifiedName().split(" ")[1];
 			} else {
 				int otherIndex = 0;
 				for (Dependable otherDep : itemIndexes) {

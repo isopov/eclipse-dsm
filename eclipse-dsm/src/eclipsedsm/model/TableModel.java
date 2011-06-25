@@ -3,16 +3,55 @@ package eclipsedsm.model;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
+
+import org.dtangler.core.dependencies.Dependable;
+import org.dtangler.core.dependencies.DependencyGraph;
 
 public class TableModel {
-	private List<VerticalElement> verticals;
-	private List<HorizontalElement> horizontals;
+	private List<VerticalElement> verticals = new ArrayList<VerticalElement>();
+	private List<HorizontalElement> horizontals = new ArrayList<HorizontalElement>();
 
-	public TableModel(List<String> names, List<List<Integer>> values) {
-		checkDimensions(names, values);
+	public TableModel(DependencyGraph items) {
+		Set<Dependable> itemList = new TreeSet<Dependable>(new Comparator<Dependable>() {
+
+			@Override
+			public int compare(Dependable o1, Dependable o2) {
+				return o1.getFullyQualifiedName().split(" ")[1].compareTo(o2.getFullyQualifiedName().split(" ")[1]);
+			}
+		});
+		itemList.addAll(items.getAllItems());
+
+		Map<String, VerticalElement> verticalMap = new HashMap<String, VerticalElement>();
+		Map<String, HorizontalElement> horizontalMap = new HashMap<String, HorizontalElement>();
+
+		for (Dependable item : itemList) {
+			String name = item.getFullyQualifiedName().split(" ")[1];
+
+			VerticalElement vertical = new VerticalElement(name);
+			verticalMap.put(name, vertical);
+			verticals.add(vertical);
+
+			HorizontalElement horizontal = new HorizontalElement(name);
+			horizontals.add(horizontal);
+			horizontalMap.put(name, horizontal);
+		}
+		for (Dependable item : items.getAllItems()) {
+			for (Dependable subItem : items.getAllItems()) {
+				int weight = items.getDependencyWeight(item, subItem);
+				String itemName = item.getFullyQualifiedName().split(" ")[1];
+				String subItemName = subItem.getFullyQualifiedName().split(" ")[1];
+
+				verticalMap.get(itemName).getValues().put(horizontalMap.get(subItemName), weight);
+			}
+		}
+
+		Collapser.collapse(verticals, horizontals);
 	}
 
 	public List<String> getRowNames() {
@@ -86,19 +125,4 @@ public class TableModel {
 			return result;
 		}
 	}
-
-	private void checkDimensions(List<String> names, List<List<Integer>> values) {
-		int size = names.size();
-		if (values.size() != size) {
-			throw new IllegalArgumentException("Value matrix of wrong width: " + values.size() + " instead of " + size);
-
-		}
-		for (List<Integer> column : values) {
-			if (column.size() != size) {
-				throw new IllegalArgumentException("One of columns of wrong size: " + column.size() + " instead of "
-						+ size);
-			}
-		}
-	}
-
 }
