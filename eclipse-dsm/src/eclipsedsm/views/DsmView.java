@@ -28,12 +28,12 @@ import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.part.ViewPart;
 
-public class SampleView extends ViewPart {
+public class DsmView extends ViewPart {
 
 	/**
 	 * The ID of the view as specified by the extension.
 	 */
-	public static final String ID = "eclipsedsm.views.SampleView";
+	public static final String ID = "eclipsedsm.views.DsmView";
 
 	// TODO Maybe this value should be taken from somewhere?
 	private static final String JAVA_NATURE = "org.eclipse.jdt.core.javanature";
@@ -45,7 +45,7 @@ public class SampleView extends ViewPart {
 	/**
 	 * The constructor.
 	 */
-	public SampleView() {
+	public DsmView() {
 	}
 
 	/**
@@ -79,7 +79,6 @@ public class SampleView extends ViewPart {
 
 		new TableColumn(viewer.getTable(), SWT.CENTER).setText("Class");
 		for (Dependable dep : itemIndexes) {
-			//			new TableColumn(viewer.getTable(), SWT.CENTER).setText(dep.getDisplayName());
 			new TableColumn(viewer.getTable(), SWT.CENTER).setImage(GraphicsUtils.createRotatedText(
 					dep.getDisplayName(), viewer.getTable().getFont(), viewer.getTable().getForeground(), SWT.UP));
 		}
