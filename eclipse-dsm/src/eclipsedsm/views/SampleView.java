@@ -79,7 +79,9 @@ public class SampleView extends ViewPart {
 
 		new TableColumn(viewer.getTable(), SWT.CENTER).setText("Class");
 		for (Dependable dep : itemIndexes) {
-			new TableColumn(viewer.getTable(), SWT.CENTER).setText(dep.getDisplayName());
+			//			new TableColumn(viewer.getTable(), SWT.CENTER).setText(dep.getDisplayName());
+			new TableColumn(viewer.getTable(), SWT.CENTER).setImage(GraphicsUtils.createRotatedText(
+					dep.getDisplayName(), viewer.getTable().getFont(), viewer.getTable().getForeground(), SWT.UP));
 		}
 	}
 

@@ -13,4 +13,5 @@ public class VerticalElement extends Element {
 	public Map<HorizontalElement, Integer> getValues() {
 		return values;
 	}
+
 }
