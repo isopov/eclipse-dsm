@@ -91,8 +91,9 @@ public final class Collapser {
 			int insertingIndex = insertingIndex(entry.getKey(), elements);
 			T newParent = null;
 			try {
-				Constructor<?> constructor = elementClass.getConstructors()[0];
-				newParent = (T) constructor.newInstance(entry.getKey());
+				@SuppressWarnings("unchecked")
+				Constructor<T> constructor = (Constructor<T>) elementClass.getConstructors()[0];
+				newParent = constructor.newInstance(entry.getKey());
 			} catch (Exception e) {
 				throw new IllegalStateException("Unsupproted construcor was met");
 			}
