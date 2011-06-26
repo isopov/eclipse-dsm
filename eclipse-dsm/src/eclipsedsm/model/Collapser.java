@@ -31,6 +31,11 @@ public final class Collapser {
 		if (elements == null) {
 			return;
 		}
+		if (elements.size() == 1 && elements.get(0).getChildren() != null) {
+			List<T> children = elements.get(0).getChildren();
+			elements.clear();
+			elements.addAll(children);
+		}
 		for (int i = 0; i < elements.size(); i++) {
 			T element = elements.get(i);
 			if (element.getChildren() != null && elements.get(i).getChildren().size() == 1) {

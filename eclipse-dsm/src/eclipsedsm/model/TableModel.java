@@ -12,8 +12,11 @@ import java.util.TreeSet;
 
 import org.dtangler.core.dependencies.Dependable;
 import org.dtangler.core.dependencies.DependencyGraph;
+import org.eclipse.jface.viewers.ILabelProviderListener;
+import org.eclipse.jface.viewers.ITableLabelProvider;
+import org.eclipse.swt.graphics.Image;
 
-public class TableModel {
+public class TableModel implements ITableLabelProvider {
 	private List<VerticalElement> verticals = new ArrayList<VerticalElement>();
 	private List<HorizontalElement> horizontals = new ArrayList<HorizontalElement>();
 
@@ -54,7 +57,7 @@ public class TableModel {
 		Collapser.collapse(verticals, horizontals);
 	}
 
-	public List<String> getRowNames() {
+	public List<String> getColumnNames() {
 		List<String> result = new ArrayList<String>();
 		for (HorizontalElement element : horizontals) {
 			result.addAll(getNamesFromElement(element));
@@ -62,10 +65,22 @@ public class TableModel {
 		return result;
 	}
 
-	public List<String> getColumnNames() {
-		List<String> result = new ArrayList<String>();
-		for (VerticalElement element : verticals) {
-			result.addAll(getNamesFromElement(element));
+	public List<VerticalElement> getRows() {
+		List<VerticalElement> result = new ArrayList<VerticalElement>();
+
+		for (VerticalElement vertical : verticals) {
+			result.addAll(getRows(vertical));
+		}
+		return result;
+	}
+
+	private List<VerticalElement> getRows(VerticalElement vertical) {
+		List<VerticalElement> result = new ArrayList<VerticalElement>();
+		result.add(vertical);
+		if (!vertical.isCollapsed() && vertical.isCollapsible()) {
+			for (VerticalElement subVertical : vertical.getChildren()) {
+				result.addAll(getRows(subVertical));
+			}
 		}
 		return result;
 	}
@@ -84,32 +99,32 @@ public class TableModel {
 	}
 
 	public Integer getValue(Integer row, Integer column) {
-		return (getRowElementsIndexes().get(row)).getValue(getColumnElementsIndexes().get(column));
+		return (getVerticalElementsIndexes().get(row)).getValue(getHorizontalElementsIndexes().get(column));
 	}
 
-	private Map<Integer, VerticalElement> getRowElementsIndexes() {
+	private Map<Integer, VerticalElement> getVerticalElementsIndexes() {
 		Map<Integer, VerticalElement> result = new HashMap<Integer, VerticalElement>();
 		Integer start = 0;
 		for (VerticalElement element : verticals) {
-			Map<Integer, VerticalElement> rowElementsIndexes = getRowElementsIndexes(element, start);
+			Map<Integer, VerticalElement> rowElementsIndexes = getElementsIndexes(element, start);
 			result.putAll(rowElementsIndexes);
 			start += rowElementsIndexes.size();
 		}
 		return result;
 	}
 
-	private Map<Integer, HorizontalElement> getColumnElementsIndexes() {
+	private Map<Integer, HorizontalElement> getHorizontalElementsIndexes() {
 		Map<Integer, HorizontalElement> result = new HashMap<Integer, HorizontalElement>();
 		Integer start = 0;
 		for (HorizontalElement element : horizontals) {
-			Map<Integer, HorizontalElement> rowElementsIndexes = getRowElementsIndexes(element, start);
+			Map<Integer, HorizontalElement> rowElementsIndexes = getElementsIndexes(element, start);
 			result.putAll(rowElementsIndexes);
 			start += rowElementsIndexes.size();
 		}
 		return result;
 	}
 
-	private <T extends Element<T>> Map<Integer, T> getRowElementsIndexes(T element, Integer start) {
+	private <T extends Element<T>> Map<Integer, T> getElementsIndexes(T element, Integer start) {
 		if (element.isCollapsed() || !element.isCollapsible()) {
 			return Collections.singletonMap(start, element);
 		} else {
@@ -117,11 +132,56 @@ public class TableModel {
 			result.put(start, element);
 			Integer newStart = start + 1;
 			for (T subelement : element.getChildren()) {
-				Map<Integer, T> rowElementsIndexes = getRowElementsIndexes(subelement, newStart);
+				Map<Integer, T> rowElementsIndexes = getElementsIndexes(subelement, newStart);
 				result.putAll(rowElementsIndexes);
 				newStart += rowElementsIndexes.size();
 			}
 			return result;
+		}
+	}
+
+	@Override
+	public void addListener(ILabelProviderListener listener) {
+		// no code
+
+	}
+
+	@Override
+	public void dispose() {
+		// no code
+
+	}
+
+	@Override
+	public boolean isLabelProperty(Object element, String property) {
+		// no code
+		return false;
+	}
+
+	@Override
+	public void removeListener(ILabelProviderListener listener) {
+		// no code
+
+	}
+
+	@Override
+	public Image getColumnImage(Object element, int columnIndex) {
+		// no code
+		return null;
+	}
+
+	@Override
+	public String getColumnText(Object element, int columnIndex) {
+		VerticalElement row = (VerticalElement) element;
+		if (columnIndex == 0) {
+			return row.getName();
+		} else {
+			HorizontalElement item = getHorizontalElementsIndexes().get(columnIndex - 1);
+			if (item.getName().equals(row.getName())) {
+				return "-";
+			}
+			return String.valueOf(row.getValue(item));
+
 		}
 	}
 }
