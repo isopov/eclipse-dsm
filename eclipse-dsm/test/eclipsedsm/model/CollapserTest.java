@@ -31,13 +31,13 @@ public final class CollapserTest {
 		Collapser.collapse(verticals, horizontals);
 
 		Assert.assertEquals(1, verticals.size());
-		List<Element> verticalChildren = verticals.get(0).getChildren();
+		List<VerticalElement> verticalChildren = verticals.get(0).getChildren();
 		Assert.assertEquals(2, verticalChildren.size());
 		Assert.assertEquals(vertical1, verticalChildren.get(0));
 		Assert.assertEquals(vertical2, verticalChildren.get(1));
 
 		Assert.assertEquals(1, horizontals.size());
-		List<Element> horizontalChildren = horizontals.get(0).getChildren();
+		List<HorizontalElement> horizontalChildren = horizontals.get(0).getChildren();
 		Assert.assertEquals(2, horizontalChildren.size());
 		Assert.assertEquals(horizontal1, horizontalChildren.get(0));
 		Assert.assertEquals(horizontal2, horizontalChildren.get(1));

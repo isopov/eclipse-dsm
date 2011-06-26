@@ -2,10 +2,10 @@ package eclipsedsm.model;
 
 import java.util.List;
 
-public class Element {
+public class Element<T extends Element<T>> {
 	private final String name;
 	private boolean collapsed = true;
-	private List<Element> children;
+	private List<T> children;
 
 	protected Element(String name) {
 		this.name = name;
@@ -24,11 +24,11 @@ public class Element {
 		this.collapsed = collapsed;
 	}
 
-	public List<Element> getChildren() {
+	public List<T> getChildren() {
 		return children;
 	}
 
-	public void setChildren(List<Element> children) {
+	public void setChildren(List<T> children) {
 		this.children = children;
 	}
 
