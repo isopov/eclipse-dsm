@@ -19,9 +19,23 @@ public final class Collapser {
 		while (commonParent(verticals)) {
 			collapse(verticals, VerticalElement.class);
 		}
+		removeOnechildPaths(verticals);
 
 		while (commonParent(horizontals)) {
 			collapse(horizontals, HorizontalElement.class);
+		}
+		removeOnechildPaths(horizontals);
+	}
+
+	private static <T extends Element<T>> void removeOnechildPaths(List<T> elements) {
+		if (elements == null) {
+			return;
+		}
+		for (int i = 0; i < elements.size(); i++) {
+			T element = elements.get(i);
+			if (element.getChildren() != null && elements.get(i).getChildren().size() == 1) {
+				elements.set(i, element.getChildren().get(0));
+			}
 		}
 	}
 

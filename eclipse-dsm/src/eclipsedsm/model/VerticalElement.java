@@ -10,8 +10,20 @@ public class VerticalElement extends Element<VerticalElement> {
 		super(name);
 	}
 
-	public Map<HorizontalElement, Integer> getValues() {
-		return values;
+	public Integer getValue(HorizontalElement element) {
+		Integer result = values.get(element);
+		if (result == null) {
+			result = 0;
+			for (HorizontalElement child : element.getChildren()) {
+				result += getValue(child);
+			}
+			putValue(element, result);
+		}
+		return result;
+	}
+
+	public void putValue(HorizontalElement element, Integer value) {
+		values.put(element, value);
 	}
 
 }

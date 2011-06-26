@@ -47,7 +47,7 @@ public class TableModel {
 				String itemName = item.getFullyQualifiedName().split(" ")[1];
 				String subItemName = subItem.getFullyQualifiedName().split(" ")[1];
 
-				verticalMap.get(itemName).getValues().put(horizontalMap.get(subItemName), weight);
+				verticalMap.get(itemName).putValue(horizontalMap.get(subItemName), weight);
 			}
 		}
 
@@ -84,7 +84,7 @@ public class TableModel {
 	}
 
 	public Integer getValue(Integer row, Integer column) {
-		return (getRowElementsIndexes().get(row)).getValues().get(getColumnElementsIndexes().get(column));
+		return (getRowElementsIndexes().get(row)).getValue(getColumnElementsIndexes().get(column));
 	}
 
 	private Map<Integer, VerticalElement> getRowElementsIndexes() {
