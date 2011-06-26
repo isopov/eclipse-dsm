@@ -3,24 +3,24 @@ package eclipsedsm.model;
 import java.util.HashMap;
 import java.util.Map;
 
-public class VerticalElement extends Element<VerticalElement> {
-	private final Map<HorizontalElement, Integer> values = new HashMap<HorizontalElement, Integer>();
+public class RowElement extends Element<RowElement> {
+	private final Map<ColumnElement, Integer> values = new HashMap<ColumnElement, Integer>();
 
-	public VerticalElement(String name) {
+	public RowElement(String name) {
 		super(name);
 	}
 
-	public Integer getValue(HorizontalElement element) {
+	public Integer getValue(ColumnElement element) {
 		Integer result = values.get(element);
 		if (result == null) {
 			result = 0;
 			if (element.getChildren() != null) {
-				for (HorizontalElement child : element.getChildren()) {
+				for (ColumnElement child : element.getChildren()) {
 					result += getValue(child);
 				}
 			}
 			if (result == 0 && getChildren() != null) {
-				for (VerticalElement child : getChildren()) {
+				for (RowElement child : getChildren()) {
 					result += child.getValue(element);
 				}
 			}
@@ -29,7 +29,7 @@ public class VerticalElement extends Element<VerticalElement> {
 		return result;
 	}
 
-	public void putValue(HorizontalElement element, Integer value) {
+	public void putValue(ColumnElement element, Integer value) {
 		values.put(element, value);
 	}
 

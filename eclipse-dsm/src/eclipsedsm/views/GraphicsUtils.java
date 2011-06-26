@@ -11,7 +11,7 @@ import org.eclipse.swt.graphics.RGB;
 import org.eclipse.swt.widgets.Display;
 
 /**
- * Copy&Pasted from java2s.com
+ * Copy&Pasted from java2s.com. Heavily rewritten.
  * 
  * This class contains utility methods for drawing graphics
  * 
@@ -33,9 +33,8 @@ public final class GraphicsUtils {
 	 * @param font
 	 *            the font to use
 	 * @param foreground
-	 *            the color for the text
-	 * @param background
-	 *            the background color
+	 *            the color for the text, should not be white, as white is used
+	 *            to represent transparent background
 	 * @param style
 	 *            direction to rotate (up or down)
 	 * @return Image

@@ -2,7 +2,6 @@ package eclipsedsm.model;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -17,8 +16,8 @@ import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.swt.graphics.Image;
 
 public class TableModel implements ITableLabelProvider {
-	private List<VerticalElement> verticals = new ArrayList<VerticalElement>();
-	private List<HorizontalElement> horizontals = new ArrayList<HorizontalElement>();
+	private List<RowElement> rows = new ArrayList<RowElement>();
+	private List<ColumnElement> columns = new ArrayList<ColumnElement>();
 
 	public TableModel(DependencyGraph items) {
 		Set<Dependable> itemList = new TreeSet<Dependable>(new Comparator<Dependable>() {
@@ -30,19 +29,19 @@ public class TableModel implements ITableLabelProvider {
 		});
 		itemList.addAll(items.getAllItems());
 
-		Map<String, VerticalElement> verticalMap = new HashMap<String, VerticalElement>();
-		Map<String, HorizontalElement> horizontalMap = new HashMap<String, HorizontalElement>();
+		Map<String, RowElement> rowMap = new HashMap<String, RowElement>();
+		Map<String, ColumnElement> columnMap = new HashMap<String, ColumnElement>();
 
 		for (Dependable item : itemList) {
 			String name = item.getFullyQualifiedName().split(" ")[1];
 
-			VerticalElement vertical = new VerticalElement(name);
-			verticalMap.put(name, vertical);
-			verticals.add(vertical);
+			RowElement vertical = new RowElement(name);
+			rowMap.put(name, vertical);
+			rows.add(vertical);
 
-			HorizontalElement horizontal = new HorizontalElement(name);
-			horizontals.add(horizontal);
-			horizontalMap.put(name, horizontal);
+			ColumnElement column = new ColumnElement(name);
+			columns.add(column);
+			columnMap.put(name, column);
 		}
 		for (Dependable item : items.getAllItems()) {
 			for (Dependable subItem : items.getAllItems()) {
@@ -50,42 +49,42 @@ public class TableModel implements ITableLabelProvider {
 				String itemName = item.getFullyQualifiedName().split(" ")[1];
 				String subItemName = subItem.getFullyQualifiedName().split(" ")[1];
 
-				verticalMap.get(itemName).putValue(horizontalMap.get(subItemName), weight);
+				rowMap.get(itemName).putValue(columnMap.get(subItemName), weight);
 			}
 		}
 
-		Collapser.collapse(verticals, horizontals);
+		Collapser.collapse(rows, columns);
 	}
 
 	public List<String> getColumnNames() {
 		List<String> result = new ArrayList<String>();
-		for (HorizontalElement element : horizontals) {
-			result.addAll(getNamesFromElement(element));
+		for (ColumnElement element : columns) {
+			result.addAll(getColumnNames(element));
 		}
 		return result;
 	}
 
-	public List<VerticalElement> getRows() {
-		List<VerticalElement> result = new ArrayList<VerticalElement>();
+	public List<RowElement> getRows() {
+		List<RowElement> result = new ArrayList<RowElement>();
 
-		for (VerticalElement vertical : verticals) {
-			result.addAll(getRows(vertical));
+		for (RowElement row : rows) {
+			result.addAll(getRows(row));
 		}
 		return result;
 	}
 
-	private List<VerticalElement> getRows(VerticalElement vertical) {
-		List<VerticalElement> result = new ArrayList<VerticalElement>();
-		result.add(vertical);
-		if (!vertical.isCollapsed() && vertical.isCollapsible()) {
-			for (VerticalElement subVertical : vertical.getChildren()) {
+	private static List<RowElement> getRows(RowElement row) {
+		List<RowElement> result = new ArrayList<RowElement>();
+		result.add(row);
+		if (!row.isCollapsed() && row.isCollapsible()) {
+			for (RowElement subVertical : row.getChildren()) {
 				result.addAll(getRows(subVertical));
 			}
 		}
 		return result;
 	}
 
-	private <T extends Element<T>> List<String> getNamesFromElement(Element<T> element) {
+	private static <T extends Element<T>> List<String> getNamesFromElement(Element<T> element) {
 		if (element.isCollapsed() || !element.isCollapsible()) {
 			return Arrays.asList(element.getName());
 		} else {
@@ -98,73 +97,81 @@ public class TableModel implements ITableLabelProvider {
 		}
 	}
 
-	//	private Map<Integer, VerticalElement> getVerticalElementsIndexes() {
-	//		Map<Integer, VerticalElement> result = new HashMap<Integer, VerticalElement>();
-	//		Integer start = 0;
-	//		for (VerticalElement element : verticals) {
-	//			Map<Integer, VerticalElement> rowElementsIndexes = getElementsIndexes(element, start);
-	//			result.putAll(rowElementsIndexes);
-	//			start += rowElementsIndexes.size();
-	//		}
-	//		return result;
-	//	}
+	private List<String> getColumnNames(ColumnElement element) {
+		List<String> result = new ArrayList<String>();
+		result.add(element.getName());
+		if (element.getChildren() != null) {
+			for (ColumnElement subElement : element.getChildren()) {
+				result.addAll(getColumnNames(subElement));
+			}
+		}
+		return result;
 
-	private Map<Integer, HorizontalElement> getHorizontalElementsIndexes() {
-		Map<Integer, HorizontalElement> result = new HashMap<Integer, HorizontalElement>();
+	}
+
+	private Map<Integer, ColumnElement> getColumnElementsIndexes() {
+		Map<Integer, ColumnElement> result = new HashMap<Integer, ColumnElement>();
 		Integer start = 0;
-		for (HorizontalElement element : horizontals) {
-			Map<Integer, HorizontalElement> rowElementsIndexes = getElementsIndexes(element, start);
+		for (ColumnElement column : columns) {
+			Map<Integer, ColumnElement> rowElementsIndexes = getColumnElementsIndexes(column, start);
 			result.putAll(rowElementsIndexes);
 			start += rowElementsIndexes.size();
 		}
 		return result;
 	}
 
-	public VerticalElement getVerticalByName(String name) {
-		for (VerticalElement vertical : verticals) {
-			if (name.startsWith(vertical.getName())) {
-				return getByNameFromVertical(vertical, name);
+	private static Map<Integer, ColumnElement> getColumnElementsIndexes(ColumnElement column, Integer start) {
+		Map<Integer, ColumnElement> result = new HashMap<Integer, ColumnElement>();
+		result.put(start, column);
+		Integer newStart = start + 1;
+		if (column.getChildren() != null) {
+			for (ColumnElement subColumn : column.getChildren()) {
+				Map<Integer, ColumnElement> rowElementsIndexes = getColumnElementsIndexes(subColumn, newStart);
+				result.putAll(rowElementsIndexes);
+				newStart += rowElementsIndexes.size();
 			}
 		}
-		throw new IllegalStateException("Row with name " + name + " not found!");
+		return result;
 	}
 
-	private static VerticalElement getByNameFromVertical(VerticalElement vertical, String name) {
-		if (vertical.getName().equals(name)) {
-			return vertical;
+	public RowElement getRowElementByName(String name) {
+		for (RowElement vertical : rows) {
+			if (name.startsWith(vertical.getName())) {
+				return getByNameFromElement(vertical, name);
+			}
+		}
+		throw new IllegalStateException("Vertical element (row) with name " + name + " not found!");
+	}
+
+	public ColumnElement getColumnElementByName(String name) {
+		for (ColumnElement column : columns) {
+			if (name.startsWith(column.getName())) {
+				return getByNameFromElement(column, name);
+			}
+		}
+		throw new IllegalStateException("Horizontal element (column) with name " + name + " not found!");
+	}
+
+	private static <T extends Element<T>> T getByNameFromElement(T element, String name) {
+		if (element.getName().equals(name)) {
+			return element;
 		} else {
-			for (VerticalElement subVertical : vertical.getChildren()) {
-				if (name.startsWith(subVertical.getName())) {
-					return getByNameFromVertical(subVertical, name);
+			for (T subElement : element.getChildren()) {
+				if (name.startsWith(subElement.getName())) {
+					return getByNameFromElement(subElement, name);
 				}
 			}
 		}
 		throw new IllegalStateException("Row with name " + name + " not found!");
 	}
 
-	private <T extends Element<T>> Map<Integer, T> getElementsIndexes(T element, Integer start) {
-		if (element.isCollapsed() || !element.isCollapsible()) {
-			return Collections.singletonMap(start, element);
-		} else {
-			Map<Integer, T> result = new HashMap<Integer, T>();
-			result.put(start, element);
-			Integer newStart = start + 1;
-			for (T subelement : element.getChildren()) {
-				Map<Integer, T> rowElementsIndexes = getElementsIndexes(subelement, newStart);
-				result.putAll(rowElementsIndexes);
-				newStart += rowElementsIndexes.size();
-			}
-			return result;
-		}
-	}
-
 	@Override
 	public String getColumnText(Object element, int columnIndex) {
-		VerticalElement row = (VerticalElement) element;
+		RowElement row = (RowElement) element;
 		if (columnIndex == 0) {
 			return row.getName();
 		} else {
-			HorizontalElement item = getHorizontalElementsIndexes().get(columnIndex - 1);
+			ColumnElement item = getColumnElementsIndexes().get(columnIndex - 1);
 			if (item.getName().equals(row.getName())) {
 				return "-";
 			}

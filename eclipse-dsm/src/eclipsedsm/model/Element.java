@@ -6,6 +6,15 @@ public class Element<T extends Element<T>> {
 	private final String name;
 	private boolean collapsed = true;
 	private List<T> children;
+	private T parent;
+
+	public T getParent() {
+		return parent;
+	}
+
+	public void setParent(T parent) {
+		this.parent = parent;
+	}
 
 	protected Element(String name) {
 		this.name = name;

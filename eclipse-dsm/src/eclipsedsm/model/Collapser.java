@@ -15,15 +15,17 @@ public final class Collapser {
 		// no code
 	}
 
-	public static void collapse(List<VerticalElement> verticals, List<HorizontalElement> horizontals) {
+	public static void collapse(List<RowElement> verticals, List<ColumnElement> horizontals) {
 		while (commonParent(verticals)) {
-			collapse(verticals, VerticalElement.class);
+			collapse(verticals, RowElement.class);
 		}
+		removeOnechildRoots(verticals);
 		removeOnechildPaths(verticals);
 
 		while (commonParent(horizontals)) {
-			collapse(horizontals, HorizontalElement.class);
+			collapse(horizontals, ColumnElement.class);
 		}
+		removeOnechildRoots(horizontals);
 		removeOnechildPaths(horizontals);
 	}
 
@@ -31,16 +33,38 @@ public final class Collapser {
 		if (elements == null) {
 			return;
 		}
-		if (elements.size() == 1 && elements.get(0).getChildren() != null) {
+		for (T element : elements) {
+			while (element.getChildren() != null && element.getChildren().size() == 1
+					&& element.getChildren().get(0).getChildren() != null) {
+				List<T> realChildren = element.getChildren().get(0).getChildren();
+				element.getChildren().clear();
+				element.getChildren().addAll(0, realChildren);
+				for (T realChild : realChildren) {
+					realChild.setParent(element);
+				}
+			}
+			removeOnechildPaths(element.getChildren());
+		}
+	}
+
+	private static <T extends Element<T>> void removeOnechildRoots(List<T> elements) {
+		if (elements == null) {
+			return;
+		}
+		while (elements.size() == 1 && elements.get(0).getChildren() != null) {
 			List<T> children = elements.get(0).getChildren();
 			elements.clear();
 			elements.addAll(children);
+			for (T child : children) {
+				child.setParent(null);
+			}
 		}
 		for (int i = 0; i < elements.size(); i++) {
-			T element = elements.get(i);
-			if (element.getChildren() != null && elements.get(i).getChildren().size() == 1) {
-				elements.set(i, element.getChildren().get(0));
+			while (elements.get(i).getChildren() != null && elements.get(i).getChildren().size() == 1) {
+				elements.set(i, elements.get(i).getChildren().get(0));
+				elements.get(i).setParent(null);
 			}
+
 		}
 	}
 
@@ -73,6 +97,9 @@ public final class Collapser {
 				throw new IllegalStateException("Unsupproted construcor was met");
 			}
 			newParent.setChildren(entry.getValue());
+			for (T child : entry.getValue()) {
+				child.setParent(newParent);
+			}
 			elements.add(insertingIndex, newParent);
 			elements.removeAll(entry.getValue());
 		}
