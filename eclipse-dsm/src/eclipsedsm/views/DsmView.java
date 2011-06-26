@@ -18,8 +18,14 @@ import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.TableEditor;
+import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.part.ViewPart;
 
 import eclipsedsm.model.TableModel;
@@ -36,9 +42,6 @@ public class DsmView extends ViewPart {
 
 	private TableViewer viewer;
 	private TableModel model;
-
-	//	private DependencyGraph items;
-	//	private Dependable[] itemIndexes;
 
 	/**
 	 * The constructor.
@@ -57,14 +60,34 @@ public class DsmView extends ViewPart {
 
 		setItems();
 		setColumns();
-		viewer.getTable().setHeaderVisible(true);
+		Table table = viewer.getTable();
+		table.setHeaderVisible(true);
 
 		viewer.setContentProvider(ArrayContentProvider.getInstance());
 		viewer.setLabelProvider(model);
 
 		viewer.setInput(model.getRows());
 
-		// attachCellEditors(viewer, viewer.getTable());
+		for (TableItem item : table.getItems()) {
+			TableEditor tableEditor = new TableEditor(table);
+			Button button = new Button(table, SWT.PUSH);
+			button.setText(item.getText());
+			button.computeSize(SWT.DEFAULT, table.getItemHeight());
+
+			tableEditor.grabHorizontal = true;
+			tableEditor.minimumHeight = button.getSize().y;
+			tableEditor.minimumWidth = button.getSize().x;
+
+			tableEditor.setEditor(button, item, 0);
+
+			button.addSelectionListener(new SelectionAdapter() {
+				@Override
+				public void widgetSelected(SelectionEvent event) {
+					//TODO
+				}
+			});
+		}
+
 	}
 
 	private void setColumns() {
@@ -122,9 +145,5 @@ public class DsmView extends ViewPart {
 
 		Dependencies deps = new JavaDependencyEngine().getDependencies(arguments);
 		model = new TableModel(deps.getDependencyGraph(JavaScope.classes));
-		//		items = deps.getDependencyGraph(JavaScope.classes);
-		//		itemIndexes = items.getAllItems().toArray(new Dependable[items.getAllItems().size()]);
-
-		//AnalysisResult analyze = new ConfigurableDependencyAnalyzer(arguments).analyze(items);
 	}
 }

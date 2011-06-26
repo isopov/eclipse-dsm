@@ -27,9 +27,6 @@ public final class CollapserTest {
 		horizontals.add(horizontal2);
 		horizontals.add(horizontal3);
 
-		//		vertical1.getValues().put(horizontal2, 1);
-		//		vertical2.getValues().put(horizontal1, 0);
-
 		Collapser.collapse(verticals, horizontals);
 
 		Assert.assertEquals(2, verticals.size());

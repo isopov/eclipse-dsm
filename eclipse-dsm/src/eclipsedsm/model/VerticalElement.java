@@ -14,8 +14,15 @@ public class VerticalElement extends Element<VerticalElement> {
 		Integer result = values.get(element);
 		if (result == null) {
 			result = 0;
-			for (HorizontalElement child : element.getChildren()) {
-				result += getValue(child);
+			if (element.getChildren() != null) {
+				for (HorizontalElement child : element.getChildren()) {
+					result += getValue(child);
+				}
+			}
+			if (result == 0 && getChildren() != null) {
+				for (VerticalElement child : getChildren()) {
+					result += child.getValue(element);
+				}
 			}
 			putValue(element, result);
 		}
