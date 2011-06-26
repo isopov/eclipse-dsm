@@ -12,7 +12,7 @@ public class Element<T extends Element<T>> {
 	}
 
 	public boolean isCollapsible() {
-		return children == null || children.size() == 0;
+		return children != null && children.size() != 0;
 	}
 
 	// Simple getters and setters
@@ -33,6 +33,11 @@ public class Element<T extends Element<T>> {
 	}
 
 	public String getName() {
+		return name;
+	}
+
+	@Override
+	public String toString() {
 		return name;
 	}
 }

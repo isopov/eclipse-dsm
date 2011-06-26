@@ -98,20 +98,16 @@ public class TableModel implements ITableLabelProvider {
 		}
 	}
 
-	public Integer getValue(Integer row, Integer column) {
-		return (getVerticalElementsIndexes().get(row)).getValue(getHorizontalElementsIndexes().get(column));
-	}
-
-	private Map<Integer, VerticalElement> getVerticalElementsIndexes() {
-		Map<Integer, VerticalElement> result = new HashMap<Integer, VerticalElement>();
-		Integer start = 0;
-		for (VerticalElement element : verticals) {
-			Map<Integer, VerticalElement> rowElementsIndexes = getElementsIndexes(element, start);
-			result.putAll(rowElementsIndexes);
-			start += rowElementsIndexes.size();
-		}
-		return result;
-	}
+	//	private Map<Integer, VerticalElement> getVerticalElementsIndexes() {
+	//		Map<Integer, VerticalElement> result = new HashMap<Integer, VerticalElement>();
+	//		Integer start = 0;
+	//		for (VerticalElement element : verticals) {
+	//			Map<Integer, VerticalElement> rowElementsIndexes = getElementsIndexes(element, start);
+	//			result.putAll(rowElementsIndexes);
+	//			start += rowElementsIndexes.size();
+	//		}
+	//		return result;
+	//	}
 
 	private Map<Integer, HorizontalElement> getHorizontalElementsIndexes() {
 		Map<Integer, HorizontalElement> result = new HashMap<Integer, HorizontalElement>();
@@ -122,6 +118,28 @@ public class TableModel implements ITableLabelProvider {
 			start += rowElementsIndexes.size();
 		}
 		return result;
+	}
+
+	public VerticalElement getVerticalByName(String name) {
+		for (VerticalElement vertical : verticals) {
+			if (name.startsWith(vertical.getName())) {
+				return getByNameFromVertical(vertical, name);
+			}
+		}
+		throw new IllegalStateException("Row with name " + name + " not found!");
+	}
+
+	private static VerticalElement getByNameFromVertical(VerticalElement vertical, String name) {
+		if (vertical.getName().equals(name)) {
+			return vertical;
+		} else {
+			for (VerticalElement subVertical : vertical.getChildren()) {
+				if (name.startsWith(subVertical.getName())) {
+					return getByNameFromVertical(subVertical, name);
+				}
+			}
+		}
+		throw new IllegalStateException("Row with name " + name + " not found!");
 	}
 
 	private <T extends Element<T>> Map<Integer, T> getElementsIndexes(T element, Integer start) {
@@ -137,6 +155,21 @@ public class TableModel implements ITableLabelProvider {
 				newStart += rowElementsIndexes.size();
 			}
 			return result;
+		}
+	}
+
+	@Override
+	public String getColumnText(Object element, int columnIndex) {
+		VerticalElement row = (VerticalElement) element;
+		if (columnIndex == 0) {
+			return row.getName();
+		} else {
+			HorizontalElement item = getHorizontalElementsIndexes().get(columnIndex - 1);
+			if (item.getName().equals(row.getName())) {
+				return "-";
+			}
+			return String.valueOf(row.getValue(item));
+
 		}
 	}
 
@@ -168,20 +201,5 @@ public class TableModel implements ITableLabelProvider {
 	public Image getColumnImage(Object element, int columnIndex) {
 		// no code
 		return null;
-	}
-
-	@Override
-	public String getColumnText(Object element, int columnIndex) {
-		VerticalElement row = (VerticalElement) element;
-		if (columnIndex == 0) {
-			return row.getName();
-		} else {
-			HorizontalElement item = getHorizontalElementsIndexes().get(columnIndex - 1);
-			if (item.getName().equals(row.getName())) {
-				return "-";
-			}
-			return String.valueOf(row.getValue(item));
-
-		}
 	}
 }

@@ -29,6 +29,7 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.part.ViewPart;
 
 import eclipsedsm.model.TableModel;
+import eclipsedsm.model.VerticalElement;
 
 public class DsmView extends ViewPart {
 
@@ -42,6 +43,8 @@ public class DsmView extends ViewPart {
 
 	private TableViewer viewer;
 	private TableModel model;
+
+	private List<TableEditor> editors = new ArrayList<TableEditor>();
 
 	/**
 	 * The constructor.
@@ -68,6 +71,11 @@ public class DsmView extends ViewPart {
 
 		viewer.setInput(model.getRows());
 
+		attachedRowListeners(table);
+
+	}
+
+	private void attachedRowListeners(Table table) {
 		for (TableItem item : table.getItems()) {
 			TableEditor tableEditor = new TableEditor(table);
 			Button button = new Button(table, SWT.PUSH);
@@ -79,15 +87,28 @@ public class DsmView extends ViewPart {
 			tableEditor.minimumWidth = button.getSize().x;
 
 			tableEditor.setEditor(button, item, 0);
+			editors.add(tableEditor);
 
 			button.addSelectionListener(new SelectionAdapter() {
 				@Override
 				public void widgetSelected(SelectionEvent event) {
-					//TODO
+					VerticalElement vertical = model.getVerticalByName(((Button) event.getSource()).getText());
+					if (vertical.isCollapsible()) {
+						vertical.setCollapsed(!vertical.isCollapsed());
+						for (TableEditor editor : editors) {
+							editor.getEditor().dispose();
+							editor.dispose();
+						}
+						editors.clear();
+						viewer.getTable().removeAll();
+
+						viewer.setInput(model.getRows());
+						attachedRowListeners(viewer.getTable());
+						viewer.refresh();
+					}
 				}
 			});
 		}
-
 	}
 
 	private void setColumns() {
