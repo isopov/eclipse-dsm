@@ -15,10 +15,10 @@ import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ArrayContentProvider;
 import org.eclipse.jface.viewers.ColumnPixelData;
 import org.eclipse.jface.viewers.ColumnWeightData;
-import org.eclipse.jface.viewers.TableLayout;
 import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.TableEditor;
@@ -47,10 +47,12 @@ public class DsmView extends ViewPart {
 
 	// TODO Maybe this value should be taken from somewhere?
 	private static final String JAVA_NATURE = "org.eclipse.jdt.core.javanature";
+	private TableColumnLayout layout = new TableColumnLayout();
 
 	private TableViewer viewer;
 	private TableModel model;
 	private Map<Image, String> images = new HashMap<Image, String>();
+	private Map<String, Image> imagesRevert = new HashMap<String, Image>();
 
 	private List<TableEditor> editors = new ArrayList<TableEditor>();
 
@@ -60,28 +62,30 @@ public class DsmView extends ViewPart {
 			RowElement vertical = model.getRowElementByName(((Button) event.getSource()).getText());
 			if (vertical.isCollapsible()) {
 				vertical.setCollapsed(!vertical.isCollapsed());
-				for (TableEditor editor : editors) {
-					editor.getEditor().dispose();
-					editor.dispose();
-				}
-				editors.clear();
-				viewer.getTable().removeAll();
+				deleteContent();
 
-				viewer.setInput(model.getRows());
-				attachedRowListeners(viewer.getTable());
+				setContent(viewer.getTable());
 				viewer.refresh();
 			}
 		}
 	};
 
 	private Listener columnListener = new Listener() {
-
 		@Override
 		public void handleEvent(Event event) {
 			ColumnElement element = model.getColumnElementByName(images.get(((TableColumn) event.widget).getImage()));
 			if (element.isCollapsible()) {
 				element.setCollapsed(!element.isCollapsed());
-				updateCollapsedColumns();
+				Table table = viewer.getTable();
+				table.setRedraw(false);
+				deleteContent();
+				//deleting all value columns
+				while (table.getColumnCount() > 1) {
+					table.getColumns()[1].dispose();
+				}
+				setValueColumns();
+				setContent(table);
+				table.setRedraw(true);
 			}
 		}
 	};
@@ -92,30 +96,16 @@ public class DsmView extends ViewPart {
 	public DsmView() {
 	}
 
-	private void updateCollapsedColumns() {
-		for (int i = 1; i < viewer.getTable().getColumns().length; i++) {
-			TableColumn column = viewer.getTable().getColumns()[i];
-			String name = images.get(column.getImage());
-			ColumnElement columnElement = model.getColumnElementByName(name);
-			if (columnElement.isColumnVisible()) {
-				column.setWidth(40);
-			} else {
-				column.setWidth(0);
-			}
-		}
-		viewer.refresh();
-
-	}
-
 	/**
 	 * This is a callback that will allow us to create the viewer and initialize
 	 * it.
 	 */
 	@Override
 	public void createPartControl(Composite parent) {
+		layout = new TableColumnLayout();
+		parent.setLayout(layout);
 
 		viewer = new TableViewer(parent, SWT.MULTI | SWT.H_SCROLL | SWT.V_SCROLL);
-
 		setModel();
 		setColumns();
 		Table table = viewer.getTable();
@@ -124,13 +114,12 @@ public class DsmView extends ViewPart {
 		viewer.setContentProvider(ArrayContentProvider.getInstance());
 		viewer.setLabelProvider(model);
 
-		viewer.setInput(model.getRows());
-
-		attachedRowListeners(table);
+		setContent(table);
 
 	}
 
-	private void attachedRowListeners(Table table) {
+	private void setContent(Table table) {
+		viewer.setInput(model.getRows());
 		for (TableItem item : table.getItems()) {
 			TableEditor tableEditor = new TableEditor(table);
 			Button button = new Button(table, SWT.PUSH);
@@ -148,26 +137,53 @@ public class DsmView extends ViewPart {
 		}
 	}
 
-	private void setColumns() {
-		TableLayout layout = new TableLayout();
-		layout.addColumnData(new ColumnWeightData(0, 75, true));
-		for (int i = 0; i < model.getColumnNames().size(); i++) {
-			layout.addColumnData(new ColumnPixelData(40, false));
+	private void deleteContent() {
+		for (TableEditor editor : editors) {
+			editor.getEditor().dispose();
+			editor.dispose();
 		}
-		viewer.getTable().setLayout(layout);
-		images.clear();
+		editors.clear();
+		viewer.getTable().removeAll();
+	}
 
-		new TableColumn(viewer.getTable(), SWT.LEFT).setText("Class");
+	private void setColumns() {
+
+		//		viewer.getTable().setLayoutData(new GridData(SWT.LEFT, SWT.FILL, false, true));
+		//		TableLayout layout = new TableLayout();
+		//		layout.addColumnData(new ColumnWeightData(0, 75, true));
+		//		for (int i = 0; i < model.getColumnNames().size(); i++) {
+		//			layout.addColumnData(new ColumnPixelData(40, false));
+		//		}
+		//		viewer.getTable().setLayout(layout);
+
+		TableColumn column = new TableColumn(viewer.getTable(), SWT.LEFT);
+		column.setText("Class");
+		layout.setColumnData(column, new ColumnWeightData(60));
+
+		setValueColumns();
+	}
+
+	private void setValueColumns() {
+		Table table = viewer.getTable();
+
+		//		TableLayout layout = (TableLayout) table.getLayout();
+		//		for (int i = 0; i < model.getColumnNames().size(); i++) {
+		//			layout.addColumnData(new ColumnPixelData(40, false));
+		//		}
+		//adding value columns
 		for (String dep : model.getColumnNames()) {
-			TableColumn column = new TableColumn(viewer.getTable(), SWT.CENTER);
+			TableColumn column = new TableColumn(table, SWT.CENTER);
 			column.setResizable(false);
-			Image image = GraphicsUtils.createRotatedText(dep, viewer.getTable().getFont(), viewer.getTable()
-					.getForeground(), SWT.UP);
+			Image image = imagesRevert.get(dep);
+			if (image == null) {
+				image = GraphicsUtils.createRotatedText(dep, table.getFont(), table.getForeground(), SWT.UP);
+				images.put(image, dep);
+				imagesRevert.put(dep, image);
+			}
 			column.setImage(image);
-			images.put(image, dep);
 			column.addListener(SWT.Selection, columnListener);
+			layout.setColumnData(column, new ColumnPixelData(40));
 		}
-		updateCollapsedColumns();
 	}
 
 	private void setModel() {

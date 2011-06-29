@@ -59,7 +59,7 @@ public class TableModel implements ITableLabelProvider {
 	public List<String> getColumnNames() {
 		List<String> result = new ArrayList<String>();
 		for (ColumnElement element : columns) {
-			result.addAll(getColumnNames(element));
+			result.addAll(getNamesFromElement(element));
 		}
 		return result;
 	}
@@ -95,18 +95,6 @@ public class TableModel implements ITableLabelProvider {
 			}
 			return result;
 		}
-	}
-
-	private List<String> getColumnNames(ColumnElement element) {
-		List<String> result = new ArrayList<String>();
-		result.add(element.getName());
-		if (element.getChildren() != null) {
-			for (ColumnElement subElement : element.getChildren()) {
-				result.addAll(getColumnNames(subElement));
-			}
-		}
-		return result;
-
 	}
 
 	private Map<Integer, ColumnElement> getColumnElementsIndexes() {
